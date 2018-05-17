@@ -8,11 +8,6 @@
 	</parent>
 	<artifactId>property-manager-dal</artifactId>
 	<name>Property Manager DAL</name>
-	<properties>
-		<es.version>6.2.4</es.version>
-		<lucene.version>7.2.1</lucene.version>
-		<spring.version>4.3.0.RELEASE</spring.version>
-	</properties>
 	<dependencies>
 		<dependency>
 			<artifactId>property-manager-model</artifactId>

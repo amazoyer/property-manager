@@ -34,11 +34,17 @@ public class PropertyDALIntegrationTest {
 	@Test
 	public void addPropertyTest() throws IOException {
 		Property property = new Property();
-		property.setAddress("80 rue de jean driac");
+		property.setAddress("new address");
 		PropertyPrice propertyPrice = new PropertyPrice();
 		propertyPrice.setPrice(12);
 		property.getPrices().add(propertyPrice);
 		propertyDAL.addNewProperty(property);
+		refresh();
+		Assert.assertEquals(1, propertyDAL.searchPropertyByAddress("new").size());
+	}
+	
+	private void refresh() throws IOException{
+		esClient.getHighLevelClient().getLowLevelClient().performRequest("POST", "_refresh");
 	}
 	
 	@Test
@@ -49,37 +55,44 @@ public class PropertyDALIntegrationTest {
 		Assert.assertTrue("Incorrect address returned : "+address, address.contains("driac"));
 	}
 	
-	@Ignore
+	@Test
 	public void addPropertyPriceTest() throws IOException {
 		PropertyPrice propertyPrice = new PropertyPrice();
-		propertyPrice.setPrice(13);
-		//propertyDAL.addNewPropertyPrice(propertyId, price);
+		propertyPrice.setPrice(120000);
+		PropertyPrice propertyPrice2 = new PropertyPrice();
+		propertyPrice2.setPrice(125000);
+		propertyDAL.addNewPropertyPrice("1", propertyPrice);
+		propertyDAL.addNewPropertyPrice("1", propertyPrice2);
+		refresh();
+		Property modifiedProperty = propertyDAL.getPropertyByID("1");
+		Assert.assertEquals("No price found", 2, modifiedProperty.getPrices().size());
+		
 	}
 
 	@Before
 	public void injectMapping() throws IOException {
-		RestClient restClient = esClient.getRestClient();
+		RestClient restClient = esClient.getHighLevelClient().getLowLevelClient();
 		org.elasticsearch.client.Response indexResponse;
-//
-//		try {
-//			indexResponse = restClient.performRequest("DELETE", "property", Collections.<String, String>emptyMap());
-//		} catch (Exception e) {
-//		}
-//		
+
+		try {
+			indexResponse = restClient.performRequest("DELETE", "property", Collections.<String, String>emptyMap());
+		} catch (Exception e) {
+		}
+		
 		HttpEntity entity = new NStringEntity(this.getFileWithUtil("esconfig/template.json"),
 				ContentType.APPLICATION_JSON);
 
-		indexResponse = restClient.performRequest("PUT", "_template/template_1", Collections.<String, String>emptyMap(),
+		restClient.performRequest("PUT", "_template/template_1", Collections.<String, String>emptyMap(),
 				entity);
 		
 
 		entity = new NStringEntity(this.getFileWithUtil("testdata/testdata.json"),
 				ContentType.APPLICATION_JSON);
 
-		indexResponse = restClient.performRequest("POST", "_bulk", Collections.<String, String>emptyMap(),
+		restClient.performRequest("POST", "_bulk", Collections.<String, String>emptyMap(),
 				entity);
-		
-		restClient.performRequest("POST", "_refresh");
+
+		refresh();
 	}
 
 	private String getFileWithUtil(String fileName) {
