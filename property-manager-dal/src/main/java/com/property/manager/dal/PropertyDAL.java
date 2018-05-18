@@ -3,6 +3,7 @@ package com.property.manager.dal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,13 +13,16 @@ import javax.inject.Named;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
+import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
@@ -49,8 +53,10 @@ public class PropertyDAL {
 	public void addNewProperty(Property property) throws IOException {
 		String propertyJSON = mapper.writeValueAsString(property);
 		IndexRequest indexRequest = new IndexRequest("property", "property").source(propertyJSON, XContentType.JSON);
+		indexRequest.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
 		esClient.getHighLevelClient().index(indexRequest);
 	}
+
 
 	public void addNewPropertyPrice(String propertyId, PropertyPrice price) throws IOException {
 //		UpdateRequest request = new UpdateRequest("property", "property", propertyId);
@@ -68,28 +74,46 @@ public class PropertyDAL {
 
 	}
 
-	public List<Property> searchPropertyByAddress(String address)
+	
+	public Map<String, Property> listAllProperties() throws JsonParseException, JsonMappingException, IOException{
+		return searchProperty(QueryBuilders.matchAllQuery());
+	}
+	
+	public Map<String, Property> searchByAddress(String address) throws JsonParseException, JsonMappingException, IOException{
+		return searchProperty(QueryBuilders.matchQuery("address", address));
+	}
+
+	private Map<String, Property> searchProperty(QueryBuilder query)
 			throws JsonParseException, JsonMappingException, IOException {
 		SearchRequest searchRequest = new SearchRequest();
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-		searchSourceBuilder.query(QueryBuilders.matchQuery("address", address));
+		searchSourceBuilder.query(query);
 		searchRequest.source(searchSourceBuilder);
 
 		SearchResponse searchResponse = esClient.getHighLevelClient().search(searchRequest);
 		SearchHits hits = searchResponse.getHits();
-		List<Property> properties = new ArrayList<Property>();
+		Map<String, Property> properties = new HashMap<String, Property>();
 		SearchHit[] searchHits = hits.getHits();
 		for (SearchHit hit : searchHits) {
-			properties.add(mapper.readValue(hit.getSourceAsString(), Property.class));
+			properties.put(hit.getId(), mapper.readValue(hit.getSourceAsString(), Property.class));
 		}
 		return properties;
 
 	}
+
 
 	public Property getPropertyByID(String id) throws JsonParseException, JsonMappingException, IOException {
 		GetRequest getRequest = new GetRequest("property", "property", id);
 		GetResponse getResponse = esClient.getHighLevelClient().get(getRequest);
 		return mapper.readValue(getResponse.getSourceAsString(), Property.class);
 	}
+	
+
+	public void removeProperty(String id) throws IOException {
+		DeleteRequest deleteRequest = new DeleteRequest("property", "property", id);
+		deleteRequest.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
+		esClient.getHighLevelClient().delete(deleteRequest);
+	}
+
 
 }

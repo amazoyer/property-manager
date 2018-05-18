@@ -1,6 +1,7 @@
 package com.property.manager.dal;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class PropertyDALIntegrationTest {
 		property.getPrices().add(propertyPrice);
 		propertyDAL.addNewProperty(property);
 		refresh();
-		Assert.assertEquals(1, propertyDAL.searchPropertyByAddress("new").size());
+		Assert.assertEquals(1, propertyDAL.searchByAddress("new").size());
 	}
 	
 	private void refresh() throws IOException{
@@ -49,9 +50,9 @@ public class PropertyDALIntegrationTest {
 	
 	@Test
 	public void searchByAddressTest() throws IOException {
-		List<Property> properties = propertyDAL.searchPropertyByAddress("driac");
+		Collection<Property> properties = propertyDAL.searchByAddress("driac").values();
 		Assert.assertTrue("No data found", !properties.isEmpty());
-		String address = properties.get(0).getAddress();
+		String address = properties.iterator().next().getAddress();
 		Assert.assertTrue("Incorrect address returned : "+address, address.contains("driac"));
 	}
 	

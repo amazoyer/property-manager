@@ -1,2 +1,2 @@
 { "index" : { "_index" : "property", "_type" : "property", "_id" : "1" } }
-{  "address": "80 rue de jean driac" }
+{  "address": "80 rue de jean driac", "postcode" : "43000", "location" : "41.12,-71.34", "surface" : 25, "bedrooms" : 2}
