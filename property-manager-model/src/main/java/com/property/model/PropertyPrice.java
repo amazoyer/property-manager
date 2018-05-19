@@ -1,24 +1,30 @@
 package com.property.model;
 
-import java.time.LocalDate;
+import java.util.Date;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class PropertyPrice {
-	private float price;
-	private LocalDate date;
+	private Float price;
+	
+	private Date date;
 
-	public float getPrice() {
+	public Float getPrice() {
 		return price;
 	}
 
-	public void setPrice(float price) {
+	public void setPrice(Float price) {
 		this.price = price;
 	}
 
-	public LocalDate getDate() {
+	 @JsonFormat
+     (shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+	public Date getDate() {
 		return date;
 	}
-
-	public void setDate(LocalDate date) {
+	 @JsonFormat
+     (shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+	public void setDate(Date date) {
 		this.date = date;
 	}
 

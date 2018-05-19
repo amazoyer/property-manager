@@ -8,8 +8,8 @@ public class Property {
 	private String address;
 	private String postcode;
 	private String location;
-	private float surface;
-	private int bedrooms;
+	private Float surface;
+	private Integer bedrooms;
 
 	private List<PropertyPrice> propertyPrices = new ArrayList<PropertyPrice>();
 
@@ -37,19 +37,19 @@ public class Property {
 		this.location = location;
 	}
 
-	public float getSurface() {
+	public Float getSurface() {
 		return surface;
 	}
 
-	public void setSurface(float surface) {
+	public void setSurface(Float surface) {
 		this.surface = surface;
 	}
 
-	public int getBedrooms() {
+	public Integer getBedrooms() {
 		return bedrooms;
 	}
 
-	public void setBedrooms(int bedrooms) {
+	public void setBedrooms(Integer bedrooms) {
 		this.bedrooms = bedrooms;
 	}
 

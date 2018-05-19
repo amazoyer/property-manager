@@ -1,6 +1,6 @@
 <html>
  <head>
-  <title>Live Add Edit Delete Datatables Records using PHP Ajax</title>
+  <title>Property Manager - All Properties</title>
   <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
   <script src="https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
@@ -64,7 +64,7 @@
   function fetch_data()
   {  
 	  
-	   $('#property_display tr').remove();
+	   $('#property_display tbody tr').remove();
 //    var dataTable = $('#user_data').DataTable(data);
 $.getJSON( "listProperties", function( data ) {
 	$.each(data, function(id, property) {
@@ -74,7 +74,10 @@ $.getJSON( "listProperties", function( data ) {
 		appendModifiableEntry(id, 'location', property.location);
 		appendModifiableEntry(id, 'surface', property.surface);
 		appendModifiableEntry(id, 'bedrooms', property.bedrooms);
-		$('#property_display tbody tr').last().append('<td><button type="button" name="delete" class="btn btn-danger btn-xs delete" id="'+id+'">Delete</button></td>');
+		$('#property_display tbody tr').last().append('<td><button type="button" name="delete" class="btn btn-danger btn-xs delete" id="'+id+'">Delete</button></td')
+		$('#property_display tbody td').last().append('&nbsp;<a href="property/prices?id='+id+'" class="btn btn-info btn-xs">Prices</a>');
+
+		
 
 	});
 });
@@ -87,24 +90,31 @@ function appendModifiableEntry(id, columnName, columnValue) {
 }
 
 $('property_display').DataTable();
-
   }
   
   function update_data(id, column_name, value)
   {
-   $.ajax({
-    url:"update.php",
-    method:"POST",
-    data:{id:id, column_name:column_name, value:value},
-    success:function(data)
-    {
-     $('#alert_message').html('<div class="alert alert-success">'+data+'</div>');
-     fetch_data();
-    }
-   });
-   setInterval(function(){
-    $('#alert_message').html('');
-   }, 5000);
+	   var property = {};
+	   var update = {};
+	   property[column_name] = value;
+	   update[id] = property;   
+
+	   $.ajax({  
+	       type : 'POST',   
+	       contentType: 'application/json; charset=utf-8',
+	       url : 'property/update',
+	       dataType: 'json',
+	       data : JSON.stringify(update),
+	       success : function(response) {  
+	    	   $('#alert_message').html('<div class="alert alert-success">'+response.message+'</div>');
+	    	   fetch_data();
+	       },  
+	       error : function(e) {  
+	    	   setInterval(function(){
+	    		     $('#alert_message').html('');
+	    		    }, 5000);  
+	          }  
+	         }); 
   }
 
   $(document).on('blur', '.update', function(){
@@ -138,11 +148,11 @@ $('property_display').DataTable();
    $.ajax({  
        type : 'POST',   
        contentType: 'application/json; charset=utf-8',
-       url : 'property',
+       url : 'property/add',
        dataType: 'json',
        data : JSON.stringify(property),
        success : function(response) {  
-    	   $('#alert_message').html('<div class="alert alert-success">'+property+'</div>');
+    	   $('#alert_message').html('<div class="alert alert-success">'+response.message+'</div>');
     	   fetch_data();
        },  
        error : function(e) {  
@@ -162,8 +172,8 @@ $('property_display').DataTable();
      url:"property/remove",
      method:"POST",
      data:{id:id},
-     success:function(data){
-      $('#alert_message').html('<div class="alert alert-success">'+data+'</div>');
+     success:function(response){
+      $('#alert_message').html('<div class="alert alert-success">'+response.message+'</div>');
       fetch_data();
      }
     });

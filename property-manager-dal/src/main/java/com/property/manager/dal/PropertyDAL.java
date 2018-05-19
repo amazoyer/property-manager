@@ -1,16 +1,15 @@
 package com.property.manager.dal;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -24,11 +23,10 @@ import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.script.Script;
-import org.elasticsearch.script.ScriptType;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.springframework.beans.propertyeditors.CustomDateEditor;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -48,6 +46,7 @@ public class PropertyDAL {
 		this.esClient = esClient;
 		mapper = new ObjectMapper();
 		mapper.setSerializationInclusion(Include.NON_NULL);
+		mapper.setSerializationInclusion(Include.NON_EMPTY);
 	}
 
 	public void addNewProperty(Property property) throws IOException {
@@ -68,13 +67,10 @@ public class PropertyDAL {
 		String query = "{ \"script\": { \"inline\" :  \"if (ctx._source.prices == null || ctx._source.prices.size() == 0){ ctx._source.prices = params.prices}  else {ctx._source.prices.add(params.prices[0]) } \", \"lang\": \"painless\" , \"params\": { \"prices\" :  ["+mapper.writeValueAsString(price)+" ]}}}"; 
 		NStringEntity entity = new NStringEntity(query,
 				ContentType.APPLICATION_JSON);
-
 		esClient.getHighLevelClient().getLowLevelClient().performRequest("POST", "/property/property/"+propertyId+"/_update", Collections.<String, String>emptyMap(),
 				entity);
-
 	}
 
-	
 	public Map<String, Property> listAllProperties() throws JsonParseException, JsonMappingException, IOException{
 		return searchProperty(QueryBuilders.matchAllQuery());
 	}
@@ -89,7 +85,6 @@ public class PropertyDAL {
 		SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
 		searchSourceBuilder.query(query);
 		searchRequest.source(searchSourceBuilder);
-
 		SearchResponse searchResponse = esClient.getHighLevelClient().search(searchRequest);
 		SearchHits hits = searchResponse.getHits();
 		Map<String, Property> properties = new HashMap<String, Property>();
@@ -98,7 +93,6 @@ public class PropertyDAL {
 			properties.put(hit.getId(), mapper.readValue(hit.getSourceAsString(), Property.class));
 		}
 		return properties;
-
 	}
 
 
@@ -113,6 +107,15 @@ public class PropertyDAL {
 		DeleteRequest deleteRequest = new DeleteRequest("property", "property", id);
 		deleteRequest.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
 		esClient.getHighLevelClient().delete(deleteRequest);
+	}
+
+	public void updateProperty(String id, Property partialProperty) throws IOException {
+		String propertyJSON = mapper.writeValueAsString(partialProperty);
+		UpdateRequest request = new UpdateRequest(
+		        "property", 
+		        "property",  
+		        id).doc(propertyJSON, XContentType.JSON);
+		esClient.getHighLevelClient().update(request);
 	}
 
 

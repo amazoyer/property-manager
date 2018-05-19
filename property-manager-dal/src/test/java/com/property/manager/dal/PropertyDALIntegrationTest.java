@@ -13,7 +13,6 @@ import org.apache.http.nio.entity.NStringEntity;
 import org.elasticsearch.client.RestClient;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
@@ -37,7 +36,7 @@ public class PropertyDALIntegrationTest {
 		Property property = new Property();
 		property.setAddress("new address");
 		PropertyPrice propertyPrice = new PropertyPrice();
-		propertyPrice.setPrice(12);
+		propertyPrice.setPrice(12F);
 		property.getPrices().add(propertyPrice);
 		propertyDAL.addNewProperty(property);
 		refresh();
@@ -59,9 +58,9 @@ public class PropertyDALIntegrationTest {
 	@Test
 	public void addPropertyPriceTest() throws IOException {
 		PropertyPrice propertyPrice = new PropertyPrice();
-		propertyPrice.setPrice(120000);
+		propertyPrice.setPrice(120000F);
 		PropertyPrice propertyPrice2 = new PropertyPrice();
-		propertyPrice2.setPrice(125000);
+		propertyPrice2.setPrice(125000F);
 		propertyDAL.addNewPropertyPrice("1", propertyPrice);
 		propertyDAL.addNewPropertyPrice("1", propertyPrice2);
 		refresh();

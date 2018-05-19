@@ -28,7 +28,8 @@
 							"type": "float"
 						},
 						"date": {
-							"type": "date"
+							"type": "date",
+							"format": "dd/MM/yyyy"
 						}
 					}
 				}
