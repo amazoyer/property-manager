@@ -3,7 +3,6 @@ package com.property.manager.dal;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import javax.inject.Inject;
 import org.apache.commons.io.IOUtils;
@@ -17,6 +16,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import com.property.exceptions.DataException;
 import com.property.manager.dal.interfaces.IESClient;
 import com.property.model.Property;
 import com.property.model.PropertyPrice;
@@ -32,7 +33,7 @@ public class PropertyDALIntegrationTest {
 	public IESClient esClient;
 
 	@Test
-	public void addPropertyTest() throws IOException {
+	public void addPropertyTest() throws  DataException, IOException {
 		Property property = new Property();
 		property.setAddress("new address");
 		PropertyPrice propertyPrice = new PropertyPrice();
@@ -43,12 +44,12 @@ public class PropertyDALIntegrationTest {
 		Assert.assertEquals(1, propertyDAL.searchByAddress("new").size());
 	}
 	
-	private void refresh() throws IOException{
+	private void refresh() throws  IOException{
 		esClient.getHighLevelClient().getLowLevelClient().performRequest("POST", "_refresh");
 	}
 	
 	@Test
-	public void searchByAddressTest() throws IOException {
+	public void searchByAddressTest() throws DataException {
 		Collection<Property> properties = propertyDAL.searchByAddress("driac").values();
 		Assert.assertTrue("No data found", !properties.isEmpty());
 		String address = properties.iterator().next().getAddress();
@@ -56,7 +57,7 @@ public class PropertyDALIntegrationTest {
 	}
 	
 	@Test
-	public void addPropertyPriceTest() throws IOException {
+	public void addPropertyPriceTest() throws IOException, DataException {
 		PropertyPrice propertyPrice = new PropertyPrice();
 		propertyPrice.setPrice(120000F);
 		PropertyPrice propertyPrice2 = new PropertyPrice();

@@ -67,6 +67,13 @@
 			<artifactId>javax.inject</artifactId>
 			<version>1</version>
 		</dependency>
+		
+		
+		<dependency>
+			<artifactId>property-manager-common</artifactId>
+			<groupId>com.property</groupId>
+			<version>${project.parent.version}</version>
+		</dependency>
 	</dependencies>
 
 	<build>

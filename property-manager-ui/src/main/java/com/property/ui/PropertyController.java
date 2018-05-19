@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.property.exceptions.DataException;
+import com.property.interfaces.IPropertyDAL;
 import com.property.manager.dal.PropertyDAL;
 import com.property.model.Property;
 import com.property.model.PropertyPrice;
@@ -34,34 +36,38 @@ public class PropertyController {
 	static final String PRICE_VIEW = "prices";
 
 	@Inject
-	public PropertyDAL propertyDAL;
+	public IPropertyDAL propertyDAL;
 
 	@RequestMapping(value = "/properties", method = RequestMethod.GET)
-	public String createPropertiesView(Model model) throws JsonParseException, JsonMappingException, IOException {
-
+	public String createPropertiesView(Model model) {
 		return PROPERTY_VIEW;
 	}
 
 	@RequestMapping(value = "property/prices", method = RequestMethod.GET)
-	public String createPriceView(Model model) throws JsonParseException, JsonMappingException, IOException {
+	public String createPriceView(Model model) {
 		return PRICE_VIEW;
 	}
 
 	@RequestMapping(value = "/property/price/add", method = RequestMethod.POST)
-	public @ResponseBody Map<String, ? extends Object> addPrice(@RequestBody Map<String, PropertyPrice> prices,
+	public @ResponseBody Map<String, String> addPrice(@RequestBody Map<String, PropertyPrice> prices,
 			HttpServletResponse response) throws IOException {
-		for (Entry<String, PropertyPrice> price : prices.entrySet()){
-			propertyDAL.addNewPropertyPrice(price.getKey(), price.getValue());
+		Entry<String, PropertyPrice> priceEntry = prices.entrySet().iterator().next();
+		try {
+			propertyDAL.addNewPropertyPrice(priceEntry.getKey(), priceEntry.getValue());
+		} catch (DataException e) {
+			return Collections.singletonMap("message", "Cannot add price");
 		}
-		
-		return Collections.singletonMap("message", "Price added");
+		return Collections.singletonMap("message", "Prices added");
 	}
 
 	@RequestMapping(value = "/property/update", method = RequestMethod.POST)
 	public @ResponseBody Map<String, ? extends Object> updateProperties(@RequestBody Map<String, Property> properties,
 			HttpServletResponse response) throws IOException {
-		for(Entry<String, Property> property : properties.entrySet()){
+		Entry<String, Property> property = properties.entrySet().iterator().next();
+		try {
 			propertyDAL.updateProperty(property.getKey(), property.getValue());
+		} catch (DataException e) {
+			return Collections.singletonMap("message", "Cannot update property");
 		}
 		return Collections.singletonMap("message", "Property Updated");
 	}
@@ -69,45 +75,41 @@ public class PropertyController {
 	@RequestMapping(value = "/property/add", method = RequestMethod.POST)
 	public @ResponseBody Map<String, ? extends Object> createProperty(@RequestBody Property property,
 			HttpServletResponse response) throws IOException {
-		propertyDAL.addNewProperty(property);
+		try {
+			propertyDAL.addNewProperty(property);
+		} catch (DataException e) {
+			return Collections.singletonMap("message", "Cannot add property");
+		}
 		return Collections.singletonMap("message", "Property added");
 	}
 
 	@RequestMapping(value = "/property/remove", method = RequestMethod.POST)
 	public @ResponseBody Map<String, ? extends Object> deleteProperty(@RequestParam(value = "id") String id)
 			throws IOException {
-		propertyDAL.removeProperty(id);
+		try {
+			propertyDAL.removeProperty(id);
+		} catch (DataException e) {
+			return Collections.singletonMap("message", "Cannot remove property");
+		}
 		return Collections.singletonMap("message", "Property removed");
 	}
 
 	@RequestMapping(value = "/listProperties", method = RequestMethod.GET)
-	public @ResponseBody Map<String, Property> listProperties() throws Exception {
+	public @ResponseBody Map<String, ? extends Object> listProperties()  {
 		try {
 			return propertyDAL.listAllProperties();
-		} catch (IOException e) {
-			throw new Exception("Cannot retrieve property");
+		} catch (DataException e) {
+			return Collections.singletonMap("message", "Cannot list properties");
 		}
 	}
 
 	@RequestMapping(value = "/property", method = RequestMethod.GET)
-	public @ResponseBody Property getProperty(@RequestParam(value = "id") String id) throws Exception {
+	public @ResponseBody  Object getProperty(@RequestParam(value = "id") String id) {
 		try {
 			return propertyDAL.getPropertyByID(id);
-		} catch (IOException e) {
-			throw new Exception("Cannot retrieve property");
+		} catch (DataException e) {
+			return Collections.singletonMap("message", "Cannot get property");
 		}
 	}
-
-	@RequestMapping(value = "/property/listprices", method = RequestMethod.GET)
-	public @ResponseBody List<PropertyPrice> getPricesForProperty(@RequestParam(value = "id") String propertyID)
-			throws Exception {
-		try {
-			return propertyDAL.getPropertyByID(propertyID).getPrices();
-		} catch (IOException e) {
-			throw new Exception("Cannot retrieve property");
-		}
-	}
-	
-
 
 }

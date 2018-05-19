@@ -112,6 +112,12 @@
 			<groupId>com.property</groupId>
 			<version>${project.parent.version}</version>
 		</dependency>
+		
+		<dependency>
+			<artifactId>property-manager-common</artifactId>
+			<groupId>com.property</groupId>
+			<version>${project.parent.version}</version>
+		</dependency>
 
 		<dependency>
 			<groupId>javax.validation</groupId>

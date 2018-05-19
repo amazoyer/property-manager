@@ -67,8 +67,8 @@ function getParam(name){
 	  
 	   $('#price_display tbody tr').remove();
 
-$.getJSON( "listprices", { id : getParam('id') }, function( data ) {
-	$.each(data, function(id, price) {
+$.getJSON( "../property", { id : getParam('id') }, function( data ) {
+	$.each(data.prices, function(id, price) {
 		$('#price_display tbody').append('<tr>');
 		$('#price_display tbody tr').last().append('<td>'+price.date+'</td>');
 		$('#price_display tbody tr').last().append('<td>'+price.price+'</td>');

@@ -1,9 +1,7 @@
 package com.property.manager.dal;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,13 +28,18 @@ import org.springframework.beans.propertyeditors.CustomDateEditor;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.*;
+import com.property.exceptions.DataException;
+import com.property.interfaces.IPropertyDAL;
 import com.property.manager.dal.interfaces.IESClient;
 import com.property.model.Property;
 import com.property.model.PropertyPrice;
 
 @Named
-public class PropertyDAL {
+public class PropertyDAL implements IPropertyDAL{
+
+	private static String PROPERTY_INDEX_TYPE = "property";
 
 	private ObjectMapper mapper;
 	private IESClient esClient;
@@ -49,34 +52,56 @@ public class PropertyDAL {
 		mapper.setSerializationInclusion(Include.NON_EMPTY);
 	}
 
-	public void addNewProperty(Property property) throws IOException {
-		String propertyJSON = mapper.writeValueAsString(property);
-		IndexRequest indexRequest = new IndexRequest("property", "property").source(propertyJSON, XContentType.JSON);
+	public void addNewProperty(Property property) throws DataException {
+		String propertyJSON;
+		try {
+			propertyJSON = mapper.writeValueAsString(property);
+		} catch (JsonProcessingException e) {
+			throw new DataException("Parsing property error", e);
+		}
+		IndexRequest indexRequest = new IndexRequest(PROPERTY_INDEX_TYPE, PROPERTY_INDEX_TYPE).source(propertyJSON,
+				XContentType.JSON);
 		indexRequest.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
-		esClient.getHighLevelClient().index(indexRequest);
+		try {
+			esClient.getHighLevelClient().index(indexRequest);
+		} catch (IOException e) {
+			throw new DataException("Cannot index property", e);
+		}
 	}
 
+	public void addNewPropertyPrice(String propertyId, PropertyPrice price) throws DataException {
+		String query;
+		try {
+			query = "{ \"script\": { \"inline\" :  \"if (ctx._source.prices == null || ctx._source.prices.size() == 0){ ctx._source.prices = params.prices}  else {ctx._source.prices.add(params.prices[0]) } \", \"lang\": \"painless\" , \"params\": { \"prices\" :  ["
+					+ mapper.writeValueAsString(price) + " ]}}}";
+		} catch (JsonProcessingException e) {
+			throw new DataException("Parsing price error", e);
+		}
+		NStringEntity entity = new NStringEntity(query, ContentType.APPLICATION_JSON);
+		try {
+			esClient.getHighLevelClient().getLowLevelClient().performRequest("POST",
+					"/" + PROPERTY_INDEX_TYPE + "/" + PROPERTY_INDEX_TYPE + "/" + propertyId + "/_update",
+					Collections.<String, String>emptyMap(), entity);
+		} catch (IOException e) {
+			throw new DataException("Cannot index price", e);
 
-	public void addNewPropertyPrice(String propertyId, PropertyPrice price) throws IOException {
-//		UpdateRequest request = new UpdateRequest("property", "property", propertyId);
-//		Map<String, Object> parameters = Collections.singletonMap("prices", (Object) Collections.singletonList(mapper.writeValueAsString(price)));
-//		Script inline = new Script(ScriptType.INLINE, "painless", "if (ctx._source.prices == null || ctx._source.prices.size() == 0){ ctx._source.prices = params.prices}  else {ctx._source.prices.add(params.prices[0]) } ", parameters);
-//		request.script(inline);
-//		esClient.getHighLevelClient().update(request);
-		
-		String query = "{ \"script\": { \"inline\" :  \"if (ctx._source.prices == null || ctx._source.prices.size() == 0){ ctx._source.prices = params.prices}  else {ctx._source.prices.add(params.prices[0]) } \", \"lang\": \"painless\" , \"params\": { \"prices\" :  ["+mapper.writeValueAsString(price)+" ]}}}"; 
-		NStringEntity entity = new NStringEntity(query,
-				ContentType.APPLICATION_JSON);
-		esClient.getHighLevelClient().getLowLevelClient().performRequest("POST", "/property/property/"+propertyId+"/_update", Collections.<String, String>emptyMap(),
-				entity);
+		}
 	}
 
-	public Map<String, Property> listAllProperties() throws JsonParseException, JsonMappingException, IOException{
-		return searchProperty(QueryBuilders.matchAllQuery());
+	public Map<String, Property> listAllProperties() throws DataException {
+		try {
+			return searchProperty(QueryBuilders.matchAllQuery());
+		} catch (IOException e) {
+			throw new DataException("Cannot list properties", e);
+		}
 	}
-	
-	public Map<String, Property> searchByAddress(String address) throws JsonParseException, JsonMappingException, IOException{
-		return searchProperty(QueryBuilders.matchQuery("address", address));
+
+	public Map<String, Property> searchByAddress(String address) throws DataException {
+		try {
+			return searchProperty(QueryBuilders.matchQuery("address", address));
+		} catch (IOException e) {
+			throw new DataException("Cannot search on address", e);
+		}
 	}
 
 	private Map<String, Property> searchProperty(QueryBuilder query)
@@ -95,28 +120,43 @@ public class PropertyDAL {
 		return properties;
 	}
 
-
-	public Property getPropertyByID(String id) throws JsonParseException, JsonMappingException, IOException {
-		GetRequest getRequest = new GetRequest("property", "property", id);
-		GetResponse getResponse = esClient.getHighLevelClient().get(getRequest);
-		return mapper.readValue(getResponse.getSourceAsString(), Property.class);
+	public Property getPropertyByID(String id) throws DataException  {
+		GetRequest getRequest = new GetRequest(PROPERTY_INDEX_TYPE, PROPERTY_INDEX_TYPE, id);
+		GetResponse getResponse;
+		try {
+			getResponse = esClient.getHighLevelClient().get(getRequest);
+			return mapper.readValue(getResponse.getSourceAsString(), Property.class);
+		} catch (IOException e) {
+			throw new DataException("Cannot get property", e);
+		}
 	}
-	
 
-	public void removeProperty(String id) throws IOException {
-		DeleteRequest deleteRequest = new DeleteRequest("property", "property", id);
+	public void removeProperty(String id) throws DataException {
+		DeleteRequest deleteRequest = new DeleteRequest(PROPERTY_INDEX_TYPE, PROPERTY_INDEX_TYPE, id);
 		deleteRequest.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
-		esClient.getHighLevelClient().delete(deleteRequest);
+		try {
+			esClient.getHighLevelClient().delete(deleteRequest);
+		} catch (IOException e) {
+			throw new DataException("Cannot remove property", e);
+		}
 	}
 
-	public void updateProperty(String id, Property partialProperty) throws IOException {
-		String propertyJSON = mapper.writeValueAsString(partialProperty);
-		UpdateRequest request = new UpdateRequest(
-		        "property", 
-		        "property",  
-		        id).doc(propertyJSON, XContentType.JSON);
-		esClient.getHighLevelClient().update(request);
-	}
+	public void updateProperty(String id, Property partialProperty) throws DataException {
+		String propertyJSON;
+		try {
+			propertyJSON = mapper.writeValueAsString(partialProperty);
+		} catch (JsonProcessingException e) {
+			throw new DataException("Parsing property error", e);
+		}
+		UpdateRequest request = new UpdateRequest(PROPERTY_INDEX_TYPE, PROPERTY_INDEX_TYPE, id).doc(propertyJSON,
+				XContentType.JSON);
+		request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
+		try {
+			esClient.getHighLevelClient().update(request);
+		} catch (IOException e) {
+			throw new DataException("Cannot update property", e);
 
+		}
+	}
 
 }

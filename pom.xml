@@ -9,6 +9,7 @@
     <module>property-manager-dal</module>
     <module>property-manager-model</module>
     <module>property-manager-ui</module>
+    <module>property-manager-common</module>
   </modules>
   	<properties>
 		<es.version>6.2.4</es.version>
