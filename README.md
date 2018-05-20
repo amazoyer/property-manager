@@ -1,5 +1,6 @@
 # Property Manager
 
+Web application leveraging Elasticsearch that allows a user to add/remove/modify a property and its attributes and to their associated price.
 
 ## Getting Started
 
