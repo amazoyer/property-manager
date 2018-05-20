@@ -3,7 +3,12 @@ package com.property.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.validation.constraints.Size;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 public class Property {
+
 
 	private String address;
 	private String postcode;
@@ -17,6 +22,7 @@ public class Property {
 		return address;
 	}
 
+	@Size(min=1)
 	public void setAddress(String address) {
 		this.address = address;
 	}
@@ -25,6 +31,7 @@ public class Property {
 		return postcode;
 	}
 
+	@Size(min=1)
 	public void setPostcode(String postcode) {
 		this.postcode = postcode;
 	}
@@ -33,6 +40,8 @@ public class Property {
 		return location;
 	}
 
+
+	@Size(min=1)
 	public void setLocation(String location) {
 		this.location = location;
 	}
@@ -44,7 +53,7 @@ public class Property {
 	public void setSurface(Float surface) {
 		this.surface = surface;
 	}
-
+	
 	public Integer getBedrooms() {
 		return bedrooms;
 	}

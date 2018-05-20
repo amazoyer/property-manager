@@ -1,26 +1,33 @@
 # Property Manager
 
-TODO
 
 ## Getting Started
 
-TODO
+Build the maven project with :
+
+```
+mvn clean install
+```
+
+Deploy war located in 'property-manager\property-manager-ui\target' to a servlet container (eg. Tomcat)
+
+Go to url :
+
+```
+http://localhost:8080/property-manager-ui/properties
+```
 
 ### Prerequisites
 
-TODO
+Start an empty instance of Elasticsearch 6.
+
+Go to 'property-manager\property-manager-dal\src\main\resources\esconfig'
+
+And post the template.json file with the following command
 
 ```
-Give examples
-```
-
-### Installing
-
-TODO
-
-
-```
-Give the example
+curl -XPOST 'http://localhost:9200/_template/property_template' -H
+"Content-Type: application/json" -d @template.json
 ```
 
 ## License

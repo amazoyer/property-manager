@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -24,7 +26,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -37,7 +38,9 @@ import com.property.model.Property;
 import com.property.model.PropertyPrice;
 
 @Named
-public class PropertyDAL implements IPropertyDAL{
+public class PropertyDAL implements IPropertyDAL {
+
+	private static final Logger logger = Logger.getLogger(PropertyDAL.class.getName());
 
 	private static String PROPERTY_INDEX_TYPE = "property";
 
@@ -64,8 +67,12 @@ public class PropertyDAL implements IPropertyDAL{
 		indexRequest.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
 		try {
 			esClient.getHighLevelClient().index(indexRequest);
-		} catch (IOException e) {
-			throw new DataException("Cannot index property", e);
+			logger.info("Property added");
+
+		} catch (RuntimeException | IOException e) {
+			String message = "Cannot index property";
+			logger.log(Level.SEVERE, message, e);
+			throw new DataException(message, e);
 		}
 	}
 
@@ -82,8 +89,12 @@ public class PropertyDAL implements IPropertyDAL{
 			esClient.getHighLevelClient().getLowLevelClient().performRequest("POST",
 					"/" + PROPERTY_INDEX_TYPE + "/" + PROPERTY_INDEX_TYPE + "/" + propertyId + "/_update",
 					Collections.<String, String>emptyMap(), entity);
-		} catch (IOException e) {
-			throw new DataException("Cannot index price", e);
+			logger.info("Price added to property " + propertyId);
+
+		} catch (RuntimeException | IOException e) {
+			String message = "Cannot index price";
+			logger.log(Level.SEVERE, message, e);
+			throw new DataException(message, e);
 
 		}
 	}
@@ -91,16 +102,20 @@ public class PropertyDAL implements IPropertyDAL{
 	public Map<String, Property> listAllProperties() throws DataException {
 		try {
 			return searchProperty(QueryBuilders.matchAllQuery());
-		} catch (IOException e) {
-			throw new DataException("Cannot list properties", e);
+		} catch (RuntimeException | IOException e) {
+			String message = "Cannot list properties";
+			logger.log(Level.SEVERE, message, e);
+			throw new DataException(message, e);
 		}
 	}
 
 	public Map<String, Property> searchByAddress(String address) throws DataException {
 		try {
 			return searchProperty(QueryBuilders.matchQuery("address", address));
-		} catch (IOException e) {
-			throw new DataException("Cannot search on address", e);
+		} catch (RuntimeException | IOException e) {
+			String message = "Cannot search on address";
+			logger.log(Level.SEVERE, message, e);
+			throw new DataException(message, e);
 		}
 	}
 
@@ -115,19 +130,23 @@ public class PropertyDAL implements IPropertyDAL{
 		Map<String, Property> properties = new HashMap<String, Property>();
 		SearchHit[] searchHits = hits.getHits();
 		for (SearchHit hit : searchHits) {
+			String source = hit.getSourceAsString();
+			logger.fine(source);
 			properties.put(hit.getId(), mapper.readValue(hit.getSourceAsString(), Property.class));
 		}
 		return properties;
 	}
 
-	public Property getPropertyByID(String id) throws DataException  {
+	public Property getPropertyByID(String id) throws DataException {
 		GetRequest getRequest = new GetRequest(PROPERTY_INDEX_TYPE, PROPERTY_INDEX_TYPE, id);
 		GetResponse getResponse;
 		try {
 			getResponse = esClient.getHighLevelClient().get(getRequest);
 			return mapper.readValue(getResponse.getSourceAsString(), Property.class);
-		} catch (IOException e) {
-			throw new DataException("Cannot get property", e);
+		} catch (RuntimeException | IOException e) {
+			String message = "Cannot get property";
+			logger.log(Level.SEVERE, message, e);
+			throw new DataException(message, e);
 		}
 	}
 
@@ -136,8 +155,12 @@ public class PropertyDAL implements IPropertyDAL{
 		deleteRequest.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
 		try {
 			esClient.getHighLevelClient().delete(deleteRequest);
-		} catch (IOException e) {
-			throw new DataException("Cannot remove property", e);
+			logger.info("Property deleted ");
+
+		} catch (RuntimeException | IOException e) {
+			String message = "Cannot remove property";
+			logger.log(Level.SEVERE, message, e);
+			throw new DataException(message, e);
 		}
 	}
 
@@ -145,17 +168,15 @@ public class PropertyDAL implements IPropertyDAL{
 		String propertyJSON;
 		try {
 			propertyJSON = mapper.writeValueAsString(partialProperty);
-		} catch (JsonProcessingException e) {
-			throw new DataException("Parsing property error", e);
-		}
-		UpdateRequest request = new UpdateRequest(PROPERTY_INDEX_TYPE, PROPERTY_INDEX_TYPE, id).doc(propertyJSON,
-				XContentType.JSON);
-		request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
-		try {
+			UpdateRequest request = new UpdateRequest(PROPERTY_INDEX_TYPE, PROPERTY_INDEX_TYPE, id).doc(propertyJSON,
+					XContentType.JSON);
+			request.setRefreshPolicy(RefreshPolicy.WAIT_UNTIL);
 			esClient.getHighLevelClient().update(request);
-		} catch (IOException e) {
-			throw new DataException("Cannot update property", e);
-
+			logger.info("Property updated");
+		} catch (RuntimeException | IOException e) {
+			String message = "Cannot update property";
+			logger.log(Level.SEVERE, message, e);
+			throw new DataException(message, e);
 		}
 	}
 

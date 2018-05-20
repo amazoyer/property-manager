@@ -7,24 +7,6 @@
   <script src="https://cdn.datatables.net/1.10.15/js/dataTables.bootstrap.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.js"></script>
-  <style>
-  body
-  {
-   margin:0;
-   padding:0;
-   background-color:#f1f1f1;
-  }
-  .box
-  {
-   width:1270px;
-   padding:20px;
-   background-color:#fff;
-   border:1px solid #ccc;
-   border-radius:5px;
-   margin-top:25px;
-   box-sizing:border-box;
-  }
-  </style>
  </head>
  <body>
   <div class="container box">
@@ -60,6 +42,13 @@
  $(document).ready(function(){
   
   fetch_data();
+  
+  function clean_alert_message()
+  { 
+	  setInterval(function(){
+		     $('#alert_message').html('');
+		    }, 5000);  
+  }
 
   function fetch_data()
   {  
@@ -99,22 +88,24 @@ $('property_display').DataTable();
 	   property[column_name] = value;
 	   update[id] = property;   
 
+	   
 	   $.ajax({  
 	       type : 'POST',   
 	       contentType: 'application/json; charset=utf-8',
 	       url : 'property/update',
-	       dataType: 'json',
 	       data : JSON.stringify(update),
 	       success : function(response) {  
-	    	   $('#alert_message').html('<div class="alert alert-success">'+response.message+'</div>');
+	    	   $('#alert_message').html('<div class="alert alert-success">'+response+'</div>');
 	    	   fetch_data();
+	    	   clean_alert_message
 	       },  
-	       error : function(e) {  
-	    	   setInterval(function(){
-	    		     $('#alert_message').html('');
-	    		    }, 5000);  
+	       error : function(e) {
+	    	   $('#alert_message').html('<div class="alert alert-danger">'+response+'</div>');
+	    	   fetch_data();
+	    	   clean_alert_message
 	          }  
-	         }); 
+	         });  
+	   
   }
 
   $(document).on('blur', '.update', function(){
@@ -149,16 +140,16 @@ $('property_display').DataTable();
        type : 'POST',   
        contentType: 'application/json; charset=utf-8',
        url : 'property/add',
-       dataType: 'json',
        data : JSON.stringify(property),
        success : function(response) {  
-    	   $('#alert_message').html('<div class="alert alert-success">'+response.message+'</div>');
+    	   $('#alert_message').html('<div class="alert alert-success">'+response+'</div>');
     	   fetch_data();
+    	   clean_alert_message
        },  
-       error : function(e) {  
-    	   setInterval(function(){
-    		     $('#alert_message').html('');
-    		    }, 5000);  
+       error : function(e) {
+    	   $('#alert_message').html('<div class="alert alert-danger">Cannot add property</div>');
+    	   fetch_data();
+    	   clean_alert_message
           }  
          });  
    
@@ -173,13 +164,11 @@ $('property_display').DataTable();
      method:"POST",
      data:{id:id},
      success:function(response){
-      $('#alert_message').html('<div class="alert alert-success">'+response.message+'</div>');
-      fetch_data();
+      $('#alert_message').html('<div class="alert alert-success">'+response+'</div>');
+	   fetch_data();
+	   clean_alert_message();
      }
     });
-    setInterval(function(){
-     $('#alert_message').html('');
-    }, 5000);
    }
   });
  });
