@@ -5,11 +5,13 @@ import java.util.List;
 
 import javax.validation.constraints.Size;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 
+/**
+ * 
+ * Represent a property with a list of price associated
+ *
+ */
 public class Property {
-
-
 	private String address;
 	private String postcode;
 	private String location;

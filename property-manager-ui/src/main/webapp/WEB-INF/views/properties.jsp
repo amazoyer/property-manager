@@ -37,7 +37,6 @@
   </div>
  </body>
 </html>
-
 <script type="text/javascript" language="javascript" >
  $(document).ready(function(){
   
@@ -108,6 +107,7 @@ $('property_display').DataTable();
 	   
   }
 
+  // update property on out of focus
   $(document).on('blur', '.update', function(){
    var id = $(this).data("id");
    var column_name = $(this).data("column");
@@ -127,6 +127,7 @@ $('property_display').DataTable();
    $('#property_display tbody').prepend(html);
   });
   
+
   $(document).on('click', '#insert', function(){
    var property = {};
    property['address'] = $('#address').text();
@@ -135,7 +136,6 @@ $('property_display').DataTable();
    property['surface'] = $('#surface').text();
    property['bedrooms'] = $('#bedrooms').text();
    
-
    $.ajax({  
        type : 'POST',   
        contentType: 'application/json; charset=utf-8',
@@ -155,6 +155,7 @@ $('property_display').DataTable();
    
   });
   
+
   $(document).on('click', '.delete', function(){
    var id = $(this).attr("id");
    if(confirm("Are you sure you want to remove this?"))

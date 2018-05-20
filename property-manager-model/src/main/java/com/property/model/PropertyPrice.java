@@ -4,6 +4,12 @@ import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+
+/**
+ * 
+ * Price for a property at a given time
+ *
+ */
 public class PropertyPrice {
 	private Float price;
 	
